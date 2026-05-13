@@ -78,22 +78,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify classRef exists as a "class" GameRule
-    const classRule = await GameRule.findById(body.classRef).lean();
-    if (!classRule) {
-      return Response.json(
-        { error: "Validation failed.", details: ["classRef does not reference a valid GameRule."] },
-        { status: 400 }
-      );
+    // Verify classRef exists as a "class" GameRule (optional for initial creation)
+    if (body.classRef) {
+      const classRule = await GameRule.findById(body.classRef).lean();
+      if (!classRule) {
+        return Response.json(
+          { error: "Validation failed.", details: ["classRef does not reference a valid GameRule."] },
+          { status: 400 }
+        );
+      }
     }
 
-    // Verify raceRef exists as a "race" GameRule
-    const raceRule = await GameRule.findById(body.raceRef).lean();
-    if (!raceRule) {
-      return Response.json(
-        { error: "Validation failed.", details: ["raceRef does not reference a valid GameRule."] },
-        { status: 400 }
-      );
+    // Verify raceRef exists as a "race" GameRule (optional for initial creation)
+    if (body.raceRef) {
+      const raceRule = await GameRule.findById(body.raceRef).lean();
+      if (!raceRule) {
+        return Response.json(
+          { error: "Validation failed.", details: ["raceRef does not reference a valid GameRule."] },
+          { status: 400 }
+        );
+      }
     }
 
     // Auto-generate shareId if not provided

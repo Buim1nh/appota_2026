@@ -105,6 +105,7 @@ function validateOptionalFields(
 /**
  * Validate a Build creation payload.
  * Checks required fields, then delegates shared field checks.
+ * classRef and raceRef are optional to allow initial wizard creation.
  */
 export function validateCreateBuild(
   body: Record<string, unknown>
@@ -118,14 +119,13 @@ export function validateCreateBuild(
   if (!body.name || typeof body.name !== "string" || body.name.trim().length === 0) {
     errors.push("name is required and must be a non-empty string.");
   }
-  if (body.level == null) {
-    errors.push("level is required and must be an integer.");
+
+  // classRef and raceRef are optional (set via wizard steps)
+  if (body.classRef != null && !isObjectId(body.classRef)) {
+    errors.push("classRef must be a valid ObjectId.");
   }
-  if (!body.classRef) {
-    errors.push("classRef is required and must be a valid ObjectId.");
-  }
-  if (!body.raceRef) {
-    errors.push("raceRef is required and must be a valid ObjectId.");
+  if (body.raceRef != null && !isObjectId(body.raceRef)) {
+    errors.push("raceRef must be a valid ObjectId.");
   }
 
   // ── Shared validation for field formats/ranges ──

@@ -13,7 +13,12 @@ import { writeSessionAccount } from "@/lib/session-account";
 
 function SocialIconFacebook() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="size-5 shrink-0" fill="currentColor">
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      className="size-5 shrink-0"
+      fill="currentColor"
+    >
       <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.988h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
     </svg>
   );
@@ -87,112 +92,124 @@ export function RegisterScreen() {
               Tạo tài khoản
             </h1>
             <p className="mb-8 text-sm text-neutral-600 md:mx-auto md:max-w-md">
-              Create account · Đăng ký để lưu tiến độ nhân vật (bản demo lưu trên
-              trình duyệt).
+              Create account · Đăng ký để lưu tiến độ nhân vật (bản demo lưu
+              trên trình duyệt).
             </p>
 
-          <form
-            className="flex w-full flex-col gap-5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setFormError(null);
-              if (password !== confirmPassword) {
-                setFormError("Mật khẩu xác nhận không khớp · Passwords do not match");
-                return;
-              }
-              const name = username.trim() || "Adventurer";
-              writeSessionAccount({ displayName: name });
-              router.push("/");
-              router.refresh();
-            }}
-          >
-            <label className="block text-left">
-              <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500 md:text-center">
-                Tên người dùng · Username
-              </span>
-              <input
-                name="username"
-                autoComplete="username"
-                placeholder="TÊN NGƯỜI DÙNG"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="h-12 w-full rounded border border-black px-4 text-sm font-medium uppercase tracking-wide text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
-              />
-            </label>
-
-            <label className="block text-left">
-              <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500 md:text-center">
-                Mật khẩu · Password
-              </span>
-              <input
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                placeholder="MẬT KHẨU"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-12 w-full rounded bg-[#efefef] px-4 text-sm font-medium uppercase tracking-wide text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-black/10"
-              />
-            </label>
-
-            <label className="block text-left">
-              <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500 md:text-center">
-                Xác nhận mật khẩu · Confirm password
-              </span>
-              <input
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                placeholder="NHẬP LẠI MẬT KHẨU"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-12 w-full rounded bg-[#efefef] px-4 text-sm font-medium uppercase tracking-wide text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-black/10"
-              />
-            </label>
-
-            {formError ? (
-              <p className="text-left text-sm font-medium text-red-600 md:text-center" role="alert">
-                {formError}
-              </p>
-            ) : null}
-
-            <button
-              type="submit"
-              className="mt-1 h-12 w-full rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800"
+            <form
+              className="flex w-full flex-col gap-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setFormError(null);
+                if (password !== confirmPassword) {
+                  setFormError(
+                    "Mật khẩu xác nhận không khớp · Passwords do not match",
+                  );
+                  return;
+                }
+                const name = username.trim() || "Adventurer";
+                // Generate demo userId (24-char hex string for MongoDB ObjectId compatibility)
+                const demoUserId = Array.from({ length: 24 }, () =>
+                  Math.floor(Math.random() * 16).toString(16),
+                ).join("");
+                writeSessionAccount({ id: demoUserId, displayName: name });
+                router.push("/");
+                router.refresh();
+              }}
             >
-              Tạo tài khoản và tiếp tục
-            </button>
-
-            <div className="relative py-2">
-              <div className="absolute inset-x-0 top-1/2 border-t border-neutral-200" aria-hidden />
-              <p className="relative mx-auto w-max bg-white px-3 text-center text-xs font-medium uppercase tracking-wide text-neutral-400">
-                Hoặc · Or
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                className="flex min-h-12 w-full flex-wrap items-center justify-center gap-2 rounded-md bg-white px-2 py-2 text-xs font-semibold text-neutral-800 ring-1 ring-neutral-200 transition hover:bg-neutral-50 sm:text-sm"
-              >
-                <SocialIconGoogle />
-                <span className="text-center leading-snug">
-                  Đăng ký với Google · Sign up with Google
+              <label className="block text-left">
+                <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500 md:text-center">
+                  Tên người dùng · Username
                 </span>
-              </button>
-              <button
-                type="button"
-                className="flex min-h-12 w-full flex-wrap items-center justify-center gap-2 rounded-md bg-[#1877f2] px-2 py-2 text-xs font-semibold text-white transition hover:bg-[#166fe5] sm:text-sm"
-              >
-                <SocialIconFacebook />
-                <span className="text-center leading-snug">
-                  Đăng ký với Facebook · Sign up with Facebook
-                </span>
-              </button>
-            </div>
-          </form>
+                <input
+                  name="username"
+                  autoComplete="username"
+                  placeholder="TÊN NGƯỜI DÙNG"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="h-12 w-full rounded border border-black px-4 text-sm font-medium uppercase tracking-wide text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
+                />
+              </label>
 
-          <p className="mt-8 w-full text-center text-sm text-neutral-600">
+              <label className="block text-left">
+                <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500 md:text-center">
+                  Mật khẩu · Password
+                </span>
+                <input
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="MẬT KHẨU"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-12 w-full rounded bg-[#efefef] px-4 text-sm font-medium uppercase tracking-wide text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-black/10"
+                />
+              </label>
+
+              <label className="block text-left">
+                <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500 md:text-center">
+                  Xác nhận mật khẩu · Confirm password
+                </span>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="NHẬP LẠI MẬT KHẨU"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="h-12 w-full rounded bg-[#efefef] px-4 text-sm font-medium uppercase tracking-wide text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-black/10"
+                />
+              </label>
+
+              {formError ? (
+                <p
+                  className="text-left text-sm font-medium text-red-600 md:text-center"
+                  role="alert"
+                >
+                  {formError}
+                </p>
+              ) : null}
+
+              <button
+                type="submit"
+                className="mt-1 h-12 w-full rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800"
+              >
+                Tạo tài khoản và tiếp tục
+              </button>
+
+              <div className="relative py-2">
+                <div
+                  className="absolute inset-x-0 top-1/2 border-t border-neutral-200"
+                  aria-hidden
+                />
+                <p className="relative mx-auto w-max bg-white px-3 text-center text-xs font-medium uppercase tracking-wide text-neutral-400">
+                  Hoặc · Or
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  className="flex min-h-12 w-full flex-wrap items-center justify-center gap-2 rounded-md bg-white px-2 py-2 text-xs font-semibold text-neutral-800 ring-1 ring-neutral-200 transition hover:bg-neutral-50 sm:text-sm"
+                >
+                  <SocialIconGoogle />
+                  <span className="text-center leading-snug">
+                    Đăng ký với Google · Sign up with Google
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="flex min-h-12 w-full flex-wrap items-center justify-center gap-2 rounded-md bg-[#1877f2] px-2 py-2 text-xs font-semibold text-white transition hover:bg-[#166fe5] sm:text-sm"
+                >
+                  <SocialIconFacebook />
+                  <span className="text-center leading-snug">
+                    Đăng ký với Facebook · Sign up with Facebook
+                  </span>
+                </button>
+              </div>
+            </form>
+
+            <p className="mt-8 w-full text-center text-sm text-neutral-600">
               Đã có tài khoản?{" "}
               <Link
                 href="/login"
@@ -200,7 +217,7 @@ export function RegisterScreen() {
               >
                 Đăng nhập
               </Link>
-          </p>
+            </p>
           </div>
         </section>
       </div>

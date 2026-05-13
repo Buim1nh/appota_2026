@@ -6,6 +6,7 @@
  */
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import createScreenBg from "@/asset/backgound home2.jpg";
@@ -18,7 +19,8 @@ import {
 } from "@/lib/session-account";
 
 /** Tên mẫu để gợi ý nhanh — shuffle bằng nút xúc xắc */
-const NAME_POOL = [  "DRALTIMAU",
+const NAME_POOL = [
+  "DRALTIMAU",
   "RUNLIN",
   "THORVIN",
   "MIRAEL",
@@ -29,7 +31,8 @@ const NAME_POOL = [  "DRALTIMAU",
 ];
 
 /** Icon xúc xắc — random tên / placeholder nút. */
-function DiceIcon({ className }: { className?: string }) {  return (
+function DiceIcon({ className }: { className?: string }) {
+  return (
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
@@ -42,7 +45,8 @@ function DiceIcon({ className }: { className?: string }) {  return (
 }
 
 /** Icon khung ảnh — nút “Chọn chân dung” (chưa mở picker). */
-function ImageIcon({ className }: { className?: string }) {  return (
+function ImageIcon({ className }: { className?: string }) {
+  return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
@@ -59,7 +63,8 @@ function ImageIcon({ className }: { className?: string }) {  return (
 }
 
 /** Silhouette trang trí thẻ “Class” — nhóm nhân vật. */
-function SilhouetteParty({ className }: { className?: string }) {  return (
+function SilhouetteParty({ className }: { className?: string }) {
+  return (
     <svg viewBox="0 0 200 120" className={className} aria-hidden>
       <path
         fill="currentColor"
@@ -71,7 +76,8 @@ function SilhouetteParty({ className }: { className?: string }) {  return (
 }
 
 /** Silhouette thẻ “Species”. */
-function SilhouetteRaces({ className }: { className?: string }) {  return (
+function SilhouetteRaces({ className }: { className?: string }) {
+  return (
     <svg viewBox="0 0 200 120" className={className} aria-hidden>
       <path
         fill="currentColor"
@@ -83,7 +89,8 @@ function SilhouetteRaces({ className }: { className?: string }) {  return (
 }
 
 /** Silhouette phong cảnh — thẻ “Background” (wide). */
-function SilhouetteLand({ className }: { className?: string }) {  return (
+function SilhouetteLand({ className }: { className?: string }) {
+  return (
     <svg viewBox="0 0 320 100" className={className} aria-hidden>
       <path
         fill="currentColor"
@@ -95,7 +102,8 @@ function SilhouetteLand({ className }: { className?: string }) {  return (
 }
 
 /** Khung chân dung trung tâm — placeholder nhân vật. */
-function CharacterSilhouette({ className }: { className?: string }) {  return (
+function CharacterSilhouette({ className }: { className?: string }) {
+  return (
     <svg viewBox="0 0 120 200" className={className} aria-hidden>
       <path
         fill="currentColor"
@@ -112,7 +120,8 @@ type CardTone = "red" | "gold";
  * Thẻ lựa chọn (Class / Species / Background): tiêu đề song ngữ, câu hỏi, minh họa SVG góc,
  * nút “Xem tùy chọn” (UI — chưa routing). `wide` = span 2 cột trên sm+.
  */
-function SelectionCard({  tone,
+function SelectionCard({
+  tone,
   titleEn,
   titleVi,
   questionEn,
@@ -129,7 +138,8 @@ function SelectionCard({  tone,
   wide?: boolean;
 }) {
   /** Nút CTA theo tone đỏ (Class) hoặc vàng (Species/Background). */
-  const btnPrimary =    tone === "red"
+  const btnPrimary =
+    tone === "red"
       ? "border border-red-900/50 bg-red-800/90 text-white hover:bg-red-700"
       : "border border-amber-500/70 bg-zinc-900/90 text-amber-100 hover:bg-zinc-800";
 
@@ -138,7 +148,8 @@ function SelectionCard({  tone,
       className={`relative flex min-h-[220px] flex-col overflow-hidden rounded-lg border border-amber-900/25 bg-zinc-950/75 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm sm:min-h-[240px] ${wide ? "sm:col-span-2" : ""}`}
     >
       {/* Gradient che đáy thẻ — chữ đọc rõ trên illustration */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />      <div className="pointer-events-none absolute -right-4 bottom-0 opacity-90">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />{" "}
+      <div className="pointer-events-none absolute -right-4 bottom-0 opacity-90">
         {illustration}
       </div>
       <div className="relative z-10 flex flex-1 flex-col">
@@ -152,8 +163,7 @@ function SelectionCard({  tone,
           </span>
         </h3>
         <p className="mt-2 max-w-[240px] text-sm leading-relaxed text-zinc-400">
-          {questionEn}{" "}
-          <span className="text-zinc-500">{questionVi}</span>
+          {questionEn} <span className="text-zinc-500">{questionVi}</span>
         </p>
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-6">
           <button
@@ -176,14 +186,72 @@ function SelectionCard({  tone,
 }
 
 export function CreateCharacter() {
+  const router = useRouter();
   const [name, setName] = useState("");
-  const [suggestions, setSuggestions] = useState(() =>
-    NAME_POOL.slice(0, 4),
+  const [suggestions, setSuggestions] = useState(() => NAME_POOL.slice(0, 4));
+  const [account, setAccount] = useState<SessionAccount | null>(() =>
+    readSessionAccount(),
   );
-  const [account, setAccount] = useState<SessionAccount | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  /** Đọc session khi mount; lắng nghe storage — tab khác đăng nhập/xuất thì UI cập nhật */
-  useEffect(() => {    setAccount(readSessionAccount());
+  /** Create new build and navigate to character builder */
+  const handleCreateBuild = useCallback(async () => {
+    if (!account?.id) {
+      setError("You must be logged in to create a build.");
+      return;
+    }
+
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/builds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: account.id,
+          name: name || "Unnamed Character",
+          description: "",
+          isPublic: false,
+          classRef: null, // Will be set in wizard step 1
+          raceRef: null, // Will be set in wizard step 2
+          backgroundRef: null, // Will be set in wizard step 3
+          stats: {
+            strength: 10,
+            dexterity: 10,
+            constitution: 10,
+            intelligence: 10,
+            wisdom: 10,
+            charisma: 10,
+          },
+          equipment: {},
+          spells: [],
+          feats: [],
+          tags: [],
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to create build");
+      }
+
+      const data = await response.json();
+      const shareId = data.data.shareId;
+
+      // Navigate to character builder
+      router.push(`/build/${shareId}`);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to create character",
+      );
+      setIsCreating(false);
+    }
+  }, [account, name, router]);
+
+  /** Listen for storage changes (cross-tab sync) */
+  useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === ACCOUNT_STORAGE_KEY || e.key === null) {
         setAccount(readSessionAccount());
@@ -194,12 +262,14 @@ export function CreateCharacter() {
   }, []);
 
   /** Xóa cookie session — header chuyển sang link Đăng nhập / Đăng ký */
-  const logout = useCallback(() => {    clearSessionAccount();
+  const logout = useCallback(() => {
+    clearSessionAccount();
     setAccount(null);
   }, []);
 
   /** Xáo trộn NAME_POOL, lấy 4 tên hiển thị lại */
-  const shuffleNames = useCallback(() => {    const shuffled = [...NAME_POOL].sort(() => Math.random() - 0.5);
+  const shuffleNames = useCallback(() => {
+    const shuffled = [...NAME_POOL].sort(() => Math.random() - 0.5);
     setSuggestions(shuffled.slice(0, 4));
   }, []);
 
@@ -303,7 +373,9 @@ export function CreateCharacter() {
                 titleVi="Lớp"
                 questionEn="What is your calling?"
                 questionVi="Vocation của bạn là gì?"
-                illustration={<SilhouetteParty className="h-44 w-56 text-zinc-100" />}
+                illustration={
+                  <SilhouetteParty className="h-44 w-56 text-zinc-100" />
+                }
               />
               <SelectionCard
                 tone="gold"
@@ -311,7 +383,9 @@ export function CreateCharacter() {
                 titleVi="Chủng tộc"
                 questionEn="Where does your bloodline begin?"
                 questionVi="Dòng máu của bạn bắt nguồn từ đâu?"
-                illustration={<SilhouetteRaces className="h-44 w-56 text-amber-200" />}
+                illustration={
+                  <SilhouetteRaces className="h-44 w-56 text-amber-200" />
+                }
               />
               <SelectionCard
                 tone="gold"
@@ -319,25 +393,37 @@ export function CreateCharacter() {
                 titleVi="Xuất thân"
                 questionEn="What shaped you before the adventure?"
                 questionVi="Điều gì định hình bạn trước chuyến phiêu lưu?"
-                illustration={<SilhouetteLand className="h-36 w-full min-w-[280px] text-emerald-900" />}
+                illustration={
+                  <SilhouetteLand className="h-36 w-full min-w-[280px] text-emerald-900" />
+                }
                 wide
               />
             </div>
           </div>
 
           {/* Cột phải: CTA + khung portrait + input tên + chip gợi ý */}
-          <aside className="relative mx-auto w-full max-w-[380px] lg:mx-0 lg:max-w-none">            <div className="mb-3 flex justify-center">
+          <aside className="relative mx-auto w-full max-w-[380px] lg:mx-0 lg:max-w-none">
+            {" "}
+            <div className="mb-3 flex flex-col items-center gap-2">
+              {error && (
+                <p className="rounded bg-red-900/50 px-3 py-2 text-xs text-red-100">
+                  {error}
+                </p>
+              )}
               <button
                 type="button"
-                className="rounded-lg bg-gradient-to-b from-amber-700/90 to-amber-950 px-8 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-amber-50 shadow-lg ring-1 ring-amber-500/40 transition hover:from-amber-600 hover:to-amber-900"
+                onClick={handleCreateBuild}
+                disabled={isCreating || !account}
+                className="rounded-lg bg-gradient-to-b from-amber-700/90 to-amber-950 px-8 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-amber-50 shadow-lg ring-1 ring-amber-500/40 transition hover:from-amber-600 hover:to-amber-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Create character · Tạo nhân vật
+                {isCreating ? "Creating..." : "Create character · Tạo nhân vật"}
               </button>
             </div>
-
             <div className="relative mx-auto flex w-full max-w-[320px] flex-col items-center">
               {/* Khung “bức chân dung”: bo trên oval, gradient nền, silhouette + nút chọn ảnh */}
-              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-[50%] border-2 border-amber-600/70 bg-gradient-to-b from-zinc-800/90 via-zinc-950 to-black px-6 pb-8 pt-14 shadow-[0_0_40px_rgba(0,0,0,0.6)]">                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-amber-900/15 to-transparent" />
+              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-[50%] border-2 border-amber-600/70 bg-gradient-to-b from-zinc-800/90 via-zinc-950 to-black px-6 pb-8 pt-14 shadow-[0_0_40px_rgba(0,0,0,0.6)]">
+                {" "}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-amber-900/15 to-transparent" />
                 <CharacterSilhouette className="mx-auto h-52 w-32 text-zinc-700 sm:h-60 sm:w-36" />
                 <button
                   type="button"
@@ -369,7 +455,8 @@ export function CreateCharacter() {
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {/* Chip: điền nhanh ô tên */}
-                    {suggestions.map((n) => (                      <button
+                    {suggestions.map((n) => (
+                      <button
                         key={n}
                         type="button"
                         onClick={() => setName(n)}
@@ -379,7 +466,8 @@ export function CreateCharacter() {
                       </button>
                     ))}
                     {/* Xáo trộn pool tên */}
-                    <button                      type="button"
+                    <button
+                      type="button"
                       onClick={shuffleNames}
                       className="flex size-9 items-center justify-center rounded-md border border-zinc-600 bg-zinc-900 text-amber-500 transition hover:border-amber-500/50 hover:text-amber-300"
                       aria-label="New suggested names"
@@ -395,13 +483,24 @@ export function CreateCharacter() {
       </main>
 
       {/* Thanh icon cố định bên phải (md+) — Help / Book / Dice placeholder */}
-      <nav        className="fixed right-2 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-1 rounded-full border border-zinc-800/80 bg-black/70 p-1.5 shadow-xl backdrop-blur-md md:flex"
+      <nav
+        className="fixed right-2 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-1 rounded-full border border-zinc-800/80 bg-black/70 p-1.5 shadow-xl backdrop-blur-md md:flex"
         aria-label="Quick tools"
       >
         {/* Map dữ liệu path SVG — cùng một nút style */}
-        {[          { label: "Help", d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" },
-          { label: "Book", d: "M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12V2zm-7 2v5l2.5-1.5L18 9V4h-7z" },
-          { label: "Dice", d: "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 3v2h2V6H8zm5 0v2h2V6h-2zm5 0v2h2V6h-2zM8 11v2h2v-2H8zm5 0v2h2v-2h-2zm5 0v2h2v-2h-2zM8 16v2h2v-2H8zm5 0v2h2v-2h-2zm5 0v2h2v-2h-2z" },
+        {[
+          {
+            label: "Help",
+            d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z",
+          },
+          {
+            label: "Book",
+            d: "M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12V2zm-7 2v5l2.5-1.5L18 9V4h-7z",
+          },
+          {
+            label: "Dice",
+            d: "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 3v2h2V6H8zm5 0v2h2V6h-2zm5 0v2h2V6h-2zM8 11v2h2v-2H8zm5 0v2h2v-2h-2zm5 0v2h2v-2h-2zM8 16v2h2v-2H8zm5 0v2h2v-2h-2zm5 0v2h2v-2h-2z",
+          },
         ].map((item) => (
           <button
             key={item.label}

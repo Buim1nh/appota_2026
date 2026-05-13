@@ -45,8 +45,6 @@ function SocialIconGoogle() {
   );
 }
 
-
-
 /** Nút submit dạng tròn — mũi tên tiếp tục. */
 function ArrowRightIcon() {
   return (
@@ -58,8 +56,6 @@ function ArrowRightIcon() {
     </svg>
   );
 }
-
-
 
 export function LoginScreen() {
   const router = useRouter();
@@ -99,9 +95,7 @@ export function LoginScreen() {
         <section className="relative z-10 flex w-full flex-1 flex-col justify-between bg-white px-8 pb-8 pt-10 sm:px-12 lg:max-w-[min(100%,520px)] lg:shrink-0 lg:pb-12 lg:pt-14">
           <div>
             {/* mask-image: hai mép trái/phải logo mờ dần (hòa nền trắng) */}
-            <div
-              className="mb-12 w-full max-w-[min(100%,340px)] [-webkit-mask-image:linear-gradient(90deg,transparent_0%,#000_10%,#000_90%,transparent_100%)] [-webkit-mask-size:100%_100%] [mask-image:linear-gradient(90deg,transparent_0%,#000_10%,#000_90%,transparent_100%)] [mask-size:100%_100%]"
-            >
+            <div className="mb-12 w-full max-w-[min(100%,340px)] [-webkit-mask-image:linear-gradient(90deg,transparent_0%,#000_10%,#000_90%,transparent_100%)] [-webkit-mask-size:100%_100%] [mask-image:linear-gradient(90deg,transparent_0%,#000_10%,#000_90%,transparent_100%)] [mask-size:100%_100%]">
               <Image
                 src={brandLogo}
                 alt="Dungeons & Dragons"
@@ -121,7 +115,11 @@ export function LoginScreen() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const name = username.trim() || "Adventurer";
-                writeSessionAccount({ displayName: name });
+                // Generate demo userId (24-char hex string for MongoDB ObjectId compatibility)
+                const demoUserId = Array.from({ length: 24 }, () =>
+                  Math.floor(Math.random() * 16).toString(16),
+                ).join("");
+                writeSessionAccount({ id: demoUserId, displayName: name });
                 router.push("/");
                 router.refresh();
               }}
@@ -156,9 +154,16 @@ export function LoginScreen() {
               <div className="flex flex-wrap gap-2.5">
                 {/* Nút social: map cấu hình label + class nền + component icon */}
                 {[
-                  { label: "Facebook", bg: "bg-[#1877f2] text-white", Icon: SocialIconFacebook },
-                  { label: "Google", bg: "bg-white text-neutral-800 ring-1 ring-neutral-200", Icon: SocialIconGoogle },
-                 
+                  {
+                    label: "Facebook",
+                    bg: "bg-[#1877f2] text-white",
+                    Icon: SocialIconFacebook,
+                  },
+                  {
+                    label: "Google",
+                    bg: "bg-white text-neutral-800 ring-1 ring-neutral-200",
+                    Icon: SocialIconGoogle,
+                  },
                 ].map(({ label, bg, Icon }) => (
                   <button
                     key={label}
@@ -203,8 +208,6 @@ export function LoginScreen() {
               </Link>
             </p>
           </div>
-
-        
         </section>
       </div>
     </div>

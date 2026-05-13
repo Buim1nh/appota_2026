@@ -1,6 +1,6 @@
 export const ACCOUNT_STORAGE_KEY = "appota_session_account";
 
-export type SessionAccount = { displayName: string };
+export type SessionAccount = { id: string; displayName: string };
 
 export function readSessionAccount(): SessionAccount | null {
   if (typeof window === "undefined") return null;
@@ -11,12 +11,15 @@ export function readSessionAccount(): SessionAccount | null {
     if (
       parsed &&
       typeof parsed === "object" &&
+      "id" in parsed &&
       "displayName" in parsed &&
+      typeof (parsed as SessionAccount).id === "string" &&
       typeof (parsed as SessionAccount).displayName === "string"
     ) {
+      const id = (parsed as SessionAccount).id.trim();
       const displayName = (parsed as SessionAccount).displayName.trim();
-      if (!displayName) return null;
-      return { displayName };
+      if (!id || !displayName) return null;
+      return { id, displayName };
     }
     return null;
   } catch {
