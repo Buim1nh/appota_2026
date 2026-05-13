@@ -1,30 +1,16 @@
 import type { Metadata } from "next";
-import { Montserrat, Charm } from "next/font/google";
-
-
-
-
-
-
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-
-const montserrat = Montserrat({
-  variable: "--font-inter",
-  subsets: ["latin", "vietnamese"],
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
-const charm = Charm({
-  weight: ["400", "700"],
-  variable: "--font-charm",
-  subsets: ["latin", "vietnamese"],
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
-
-
-
-
-
-
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -40,15 +26,8 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${montserrat.variable} ${charm.variable} h-full antialiased`}
-
-
-
-
-
-
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

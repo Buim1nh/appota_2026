@@ -2,7 +2,7 @@
 
 /**
  * Đăng nhập: form trái / ảnh phải (lg+) — DOM [hero, form] + `lg:flex-row-reverse`; mobile chỉ form (hero ẩn).
- * Submit demo: localStorage session rồi về trang chủ — chưa gọi API thật.
+ * Submit: Gọi API /api/auth/login, lưu session vào localStorage rồi về trang chủ.
  */
 
 import Image from "next/image";
@@ -19,11 +19,21 @@ import { Header } from "./Header";
 export function LoginScreen() {
   const router = useRouter();
 
+  // Redirect if already logged in
+  useEffect(() => {
+    const account = readSessionAccount();
+    if (account) {
+      router.replace("/");
+    }
+  }, [router]);
+
   /** “Ghi nhớ” hiện chỉ là UI — chưa lưu persistence. */
   const [remember, setRemember] = useState(false);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <div className="relative flex min-h-svh w-full flex-col bg-white text-neutral-900">
@@ -78,17 +88,40 @@ export function LoginScreen() {
             {/* Form */}
             <form
               className="flex flex-col gap-6"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
+                setError(null);
 
-                const name = username.trim() || "Adventurer";
+                if (!username || !password) {
+                  setError("Vui lòng nhập tên người dùng và mật khẩu");
+                  return;
+                }
 
-                writeSessionAccount({
-                  displayName: name,
-                });
+                setIsLoading(true);
+                try {
+                  const res = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ identifier: username, password }),
+                  });
 
-                router.push("/");
-                router.refresh();
+                  const data = await res.json();
+
+                  if (!res.ok) {
+                    throw new Error(data.message || "Đăng nhập thất bại");
+                  }
+
+                  writeSessionAccount({ 
+                    displayName: data.user.username 
+                  });
+                  
+                  router.push("/");
+                  router.refresh();
+                } catch (err: any) {
+                  setError(err.message);
+                } finally {
+                  setIsLoading(false);
+                }
               }}
             >
               {/* Username */}
@@ -98,7 +131,7 @@ export function LoginScreen() {
                 <input
                   name="username"
                   autoComplete="username"
-                  placeholder="TÊN NGƯỜI DÙNG"
+                  placeholder="TÊN NGƯỜI DÙNG HOẶC EMAIL"
                   suppressHydrationWarning
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -136,12 +169,19 @@ export function LoginScreen() {
                 </span>
               </label>
 
+              {error && (
+                <p className="text-sm font-medium text-red-600" role="alert">
+                  {error}
+                </p>
+              )}
+
               {/* Submit */}
               <button
                 type="submit"
-                className="mt-1 h-12 w-full rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                disabled={isLoading}
+                className="mt-1 h-12 w-full rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50"
               >
-                Đăng nhập và tiếp tục
+                {isLoading ? "Đang xử lý..." : "Đăng nhập và tiếp tục"}
               </button>
             </form>
 

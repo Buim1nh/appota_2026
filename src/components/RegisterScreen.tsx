@@ -2,23 +2,35 @@
 
 /**
  * Đăng ký: sidebar ảnh trái (full-height), cột trắng phải — form căn giữa ngang + dọc (`items-center` + `justify-center`) giống D&D Beyond.
+ * Submit: Gọi API /api/auth/register, lưu session vào localStorage rồi về trang chủ.
  */
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import registerBackground from "../../public/asset/background register.png";
 import brandLogo from "../../public/asset/logo.png";
-import { writeSessionAccount } from "@/lib/session-account";
+import { readSessionAccount, writeSessionAccount } from "@/lib/session-account";
 import { Header } from "./Header";
 
 
 export function RegisterScreen() {
   const router = useRouter();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const account = readSessionAccount();
+    if (account) {
+      router.replace("/");
+    }
+  }, [router]);
+
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <div className="relative flex min-h-svh w-full flex-col bg-white text-neutral-900">
@@ -59,23 +71,50 @@ export function RegisterScreen() {
               Tạo tài khoản
             </h1>
             <p className="mb-8 text-sm text-neutral-600 md:mx-auto md:max-w-md">
-              Create account · Đăng ký để lưu tiến độ nhân vật (bản demo lưu trên
-              trình duyệt).
+              Create account · Đăng ký để lưu tiến độ nhân vật.
             </p>
 
             <form
               className="flex w-full flex-col gap-5"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 setFormError(null);
-                if (password !== confirmPassword) {
-                  setFormError("Mật khẩu xác nhận không khớp · Passwords do not match");
+
+                if (!username || !email || !password) {
+                  setFormError("Vui lòng điền đầy đủ thông tin");
                   return;
                 }
-                const name = username.trim() || "Adventurer";
-                writeSessionAccount({ displayName: name });
-                router.push("/");
-                router.refresh();
+
+                if (password !== confirmPassword) {
+                  setFormError("Mật khẩu xác nhận không khớp");
+                  return;
+                }
+
+                setIsLoading(true);
+                try {
+                  const res = await fetch("/api/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, email, password }),
+                  });
+
+                  const data = await res.json();
+
+                  if (!res.ok) {
+                    throw new Error(data.message || "Đăng ký thất bại");
+                  }
+
+                  writeSessionAccount({ 
+                    displayName: data.user.username 
+                  });
+                  
+                  router.push("/");
+                  router.refresh();
+                } catch (err: any) {
+                  setFormError(err.message);
+                } finally {
+                  setIsLoading(false);
+                }
               }}
             >
               <label className="block text-left">
@@ -88,6 +127,21 @@ export function RegisterScreen() {
                   placeholder="TÊN NGƯỜI DÙNG"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  className="h-12 w-full rounded border border-black px-4 text-sm font-medium uppercase tracking-wide text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
+                />
+              </label>
+
+              <label className="block text-left">
+                <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-500 md:text-center">
+                  Email
+                </span>
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="EMAIL"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="h-12 w-full rounded border border-black px-4 text-sm font-medium uppercase tracking-wide text-neutral-900 placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
                 />
               </label>
@@ -130,9 +184,10 @@ export function RegisterScreen() {
 
               <button
                 type="submit"
-                className="mt-1 h-12 w-full rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                disabled={isLoading}
+                className="mt-1 h-12 w-full rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50"
               >
-                Tạo tài khoản và tiếp tục
+                {isLoading ? "Đang xử lý..." : "Tạo tài khoản và tiếp tục"}
               </button>
 
               <div className="relative py-2">
@@ -141,8 +196,6 @@ export function RegisterScreen() {
                   Hoặc · Or
                 </p>
               </div>
-
-
             </form>
 
             <p className="mt-8 w-full text-center text-sm text-neutral-600">
