@@ -11,7 +11,7 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-export default function CharacterLayout({
+export default function HomeLandingLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Màn hình đăng nhập: cột trái là form (trắng), cột phải (desktop) là ảnh nền + lớp phủ màu/ánh sáng.
- * Submit demo: ghi tên vào session (cookie) rồi chuyển /character — chưa gọi API thật.
+ * Đăng nhập: form trái / ảnh phải (lg+) — DOM [hero, form] + `lg:flex-row-reverse`; mobile chỉ form (hero ẩn).
+ * Submit demo: localStorage session rồi về trang chủ — chưa gọi API thật.
  */
 import Image from "next/image";
 import Link from "next/link";
@@ -70,9 +70,32 @@ export function LoginScreen() {
 
   return (
     <div className="relative min-h-svh w-full bg-white text-neutral-900">
-      {/* Mobile: cột dọc; lg+: form trái + hero phải */}
-      <div className="flex min-h-svh flex-col lg:flex-row">
-        {/* Cột form: max-width để không quá rộng trên màn hình lớn */}
+      {/* Mobile: chỉ form (hero ẩn); lg+: form trái + ảnh phải — DOM [hero, form] + row-reverse */}
+      <div className="flex min-h-svh flex-col lg:flex-row-reverse">
+        {/* Hero phải (desktop): đặt trước trong DOM, hiển thị bên phải nhờ flex-row-reverse */}
+        <section
+          className="relative hidden min-h-[280px] flex-1 overflow-hidden bg-[#121212] lg:block"
+          aria-hidden
+        >
+          <div className="absolute inset-0 [-webkit-mask-image:radial-gradient(ellipse_103%_101%_at_50%_50%,#000_0%,#000_12%,rgba(0,0,0,0.72)_30%,rgba(0,0,0,0.22)_58%,transparent_86%)] [-webkit-mask-size:100%_100%] [mask-image:radial-gradient(ellipse_103%_101%_at_50%_50%,#000_0%,#000_12%,rgba(0,0,0,0.72)_30%,rgba(0,0,0,0.22)_58%,transparent_86%)] [mask-size:100%_100%]">
+            <Image
+              src={loginBackground}
+              alt=""
+              fill
+              priority
+              className="object-contain object-center brightness-[1.05] contrast-[1.03] saturate-[1.05]"
+              sizes="(max-width: 1024px) 0px, 50vw"
+            />
+          </div>
+          <div className="pointer-events-none absolute inset-0 bg-[#0a0a0a]/28" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(26,26,30,0.26)_0%,rgba(26,26,30,0.05)_52%,transparent_76%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.035)_0%,transparent_38%,rgba(0,0,0,0.08)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 mix-blend-soft-light bg-[radial-gradient(ellipse_90%_70%_at_14%_8%,rgba(255,200,140,0.22)_0%,transparent_50%),radial-gradient(ellipse_75%_60%_at_92%_88%,rgba(130,175,255,0.18)_0%,transparent_48%)]" />
+          <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-[0.55] bg-[radial-gradient(ellipse_98%_96%_at_50%_50%,transparent_48%,rgba(255,245,235,0.14)_78%,transparent_100%)]" />
+          <div className="pointer-events-none absolute inset-0 mix-blend-multiply opacity-40 bg-[radial-gradient(ellipse_105%_100%_at_50%_52%,transparent_0%,rgba(8,8,12,0.55)_100%)]" />
+        </section>
+
+        {/* Cột form (trái desktop): sau hero trong DOM → bên trái khi row-reverse */}
         <section className="relative z-10 flex w-full flex-1 flex-col justify-between bg-white px-8 pb-8 pt-10 sm:px-12 lg:max-w-[min(100%,520px)] lg:shrink-0 lg:pb-12 lg:pt-14">
           <div>
             {/* mask-image: hai mép trái/phải logo mờ dần (hòa nền trắng) */}
@@ -99,7 +122,7 @@ export function LoginScreen() {
                 e.preventDefault();
                 const name = username.trim() || "Adventurer";
                 writeSessionAccount({ displayName: name });
-                router.push("/character");
+                router.push("/");
                 router.refresh();
               }}
             >
@@ -182,39 +205,6 @@ export function LoginScreen() {
           </div>
 
         
-        </section>
-
-        {/*
-          Hero phải (chỉ lg+): ảnh object-contain + mask radial (mờ viền) + các lớp gradient/blend
-          pointer-events-none: chỉ trang trí, không chặn tương tác (aria-hidden)
-        */}
-        <section
-          className="relative hidden min-h-[280px] flex-1 overflow-hidden bg-[#121212] lg:block"
-          aria-hidden
-        >
-          {/* Ảnh nền: mask radial làm mờ viền vào nền #121212 */}
-          <div className="absolute inset-0 [-webkit-mask-image:radial-gradient(ellipse_103%_101%_at_50%_50%,#000_0%,#000_12%,rgba(0,0,0,0.72)_30%,rgba(0,0,0,0.22)_58%,transparent_86%)] [-webkit-mask-size:100%_100%] [mask-image:radial-gradient(ellipse_103%_101%_at_50%_50%,#000_0%,#000_12%,rgba(0,0,0,0.72)_30%,rgba(0,0,0,0.22)_58%,transparent_86%)] [mask-size:100%_100%]">
-            <Image
-              src={loginBackground}
-              alt=""
-              fill
-              priority
-              className="object-contain object-center brightness-[1.05] contrast-[1.03] saturate-[1.05]"
-              sizes="(max-width: 1024px) 0px, 50vw"
-            />
-          </div>
-          {/* Lớp phủ xám mỏng — giảm độ chói tổng thể */}
-          <div className="pointer-events-none absolute inset-0 bg-[#0a0a0a]/28" />
-          {/* Tối nhẹ phía trái (sát form) để tách khối */}
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(26,26,30,0.26)_0%,rgba(26,26,30,0.05)_52%,transparent_76%)]" />
-          {/* Chiều dọc: hơi sáng trên, hơi tối dưới — có chiều sâu */}
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.035)_0%,transparent_38%,rgba(0,0,0,0.08)_100%)]" />
-          {/* Ánh sáng điện ảnh: vùng ấm (key) + vùng lạnh (fill), blend soft-light */}
-          <div className="pointer-events-none absolute inset-0 mix-blend-soft-light bg-[radial-gradient(ellipse_90%_70%_at_14%_8%,rgba(255,200,140,0.22)_0%,transparent_50%),radial-gradient(ellipse_75%_60%_at_92%_88%,rgba(130,175,255,0.18)_0%,transparent_48%)]" />
-          {/* Bloom nhẹ quanh khung — screen làm sáng rìa kiểu editor */}
-          <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-[0.55] bg-[radial-gradient(ellipse_98%_96%_at_50%_50%,transparent_48%,rgba(255,245,235,0.14)_78%,transparent_100%)]" />
-          {/* Vignette cạnh — multiply tối dần ra mép */}
-          <div className="pointer-events-none absolute inset-0 mix-blend-multiply opacity-40 bg-[radial-gradient(ellipse_105%_100%_at_50%_52%,transparent_0%,rgba(8,8,12,0.55)_100%)]" />
         </section>
       </div>
     </div>
