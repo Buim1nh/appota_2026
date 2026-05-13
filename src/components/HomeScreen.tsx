@@ -179,7 +179,7 @@ export function CharacterLanding() {
   const [account, setAccount] = useState<SessionAccount | null>(null);
 
   /** Đọc session khi mount; lắng nghe storage — tab khác đăng nhập/xuất thì UI cập nhật */
-  useEffect(() => {    setAccount(readSessionAccount());
+  useEffect(() => {    queueMicrotask(() => setAccount(readSessionAccount()));
     const onStorage = (e: StorageEvent) => {
       if (e.key === ACCOUNT_STORAGE_KEY || e.key === null) {
         setAccount(readSessionAccount());
