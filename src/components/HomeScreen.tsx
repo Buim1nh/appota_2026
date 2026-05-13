@@ -7,17 +7,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
-import characterIllustration from "@/asset/character.webp";
-import homeHeroBg from "@/asset/backgound home3.webp";
-import homeBackdrop from "@/asset/backgound home2.jpg";
-import classesSectionBg from "@/asset/backgound home1.webp";
-import brandLogo from "@/asset/logo.png";
-import {
-  ACCOUNT_STORAGE_KEY,
-  clearSessionAccount,
-  readSessionAccount,
-  type SessionAccount,
-} from "@/lib/session-account";
+import characterIllustration from "../../public/asset/character.webp";
+import homeHeroBg from "../../public/asset/backgound home3.webp";
+import homeBackdrop from "../../public/asset/backgound home2.jpg";
+import classesSectionBg from "../../public/asset/backgound home1.webp";
+import { Header } from "./Header";
 
 const GOLD = "#C89B3C";
 const CTA_RED = "#E21F27";
@@ -265,24 +259,6 @@ const CLASSES: ClassDef[] = [
 ];
 
 export function CharacterLanding() {
-  const [account, setAccount] = useState<SessionAccount | null>(null);
-
-  useEffect(() => {
-    setAccount(readSessionAccount());
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === ACCOUNT_STORAGE_KEY || e.key === null) {
-        setAccount(readSessionAccount());
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  const logout = useCallback(() => {
-    clearSessionAccount();
-    setAccount(null);
-  }, []);
-
   return (
     <div className="relative min-h-svh overflow-x-hidden bg-[#06080c] text-zinc-100">
       {/* Full-viewport art (dragon / mountains) + scrims for legible copy */}
@@ -305,58 +281,7 @@ export function CharacterLanding() {
         aria-hidden
       />
 
-      <header className="relative border-b border-zinc-800/90 bg-black/55 px-4 py-3 backdrop-blur-md sm:px-8">
-        <div className="mx-auto flex min-h-[44px] max-w-7xl items-center justify-end sm:min-h-[48px]">
-          <Link
-            href="/"
-            className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-lg bg-black/55 px-3 py-1.5 ring-1 ring-white/15 backdrop-blur-sm transition hover:bg-black/70"
-            aria-label="Trang chủ"
-          >
-            <Image
-              src={brandLogo}
-              alt="Logo D&amp;D"
-              width={200}
-              height={56}
-              className="h-8 w-auto max-w-[min(52vw,200px)] object-contain object-center sm:h-10"
-              priority
-            />
-          </Link>
-          <div className="flex max-w-[min(100%,280px)] shrink-0 flex-col items-end gap-2 text-right sm:max-w-none">
-            {account ? (
-              <>
-                <p className="text-[11px] leading-snug text-zinc-100 sm:text-xs">
-                  Xin chào, {account.displayName}
-                </p>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="text-[10px] font-medium uppercase tracking-wide text-[#C89B3C]/90 underline-offset-2 hover:text-[#e0b85c] hover:underline"
-                >
-                  Đăng xuất
-                </button>
-              </>
-            ) : (
-              <nav
-                className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3"
-                aria-label="Tài khoản"
-              >
-                <Link
-                  href="/register"
-                  className="rounded border border-[#C89B3C]/50 bg-amber-950/40 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-amber-100 transition hover:border-[#C89B3C] hover:bg-amber-900/50"
-                >
-                  Tạo tài khoản
-                </Link>
-                <Link
-                  href="/login"
-                  className="text-[11px] font-semibold text-zinc-100 underline-offset-2 hover:text-white hover:underline"
-                >
-                  Đăng nhập
-                </Link>
-              </nav>
-            )}
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main>
         {/* Hero — giống tham chiếu D&D Beyond: chữ nền lớn, không thẻ kính đặc */}

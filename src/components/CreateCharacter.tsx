@@ -5,18 +5,353 @@
  * cột phải placeholder chân dung + ô tên + gợi ý tên. Đồng bộ tên từ cookie session sau login.
  */
 import Image from "next/image";
+import type { StaticImageData } from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import createScreenBg from "@/asset/backgound home2.jpg";
+import createScreenBg from "../../public/asset/backgound home2.jpg";
+import portraitFighter from "../../public/asset/portrait fighter.png";
+import portraitMage from "../../public/asset/potrait mage.png";
+import idleGifFighter from "../../public/asset/Idle-animated fighter.gif";
+import idleGifMage from "../../public/asset/Idle-animated mage.gif";
 
-import {
-  ACCOUNT_STORAGE_KEY,
-  clearSessionAccount,
-  readSessionAccount,
-  type SessionAccount,
-} from "@/lib/session-account";
+import { Header } from "./Header";
+
+const GOLD = "#C4A454";
+
+export type PortraitChoice =
+  | { kind: "preset"; id: "mage" | "fighter" }
+  | { kind: "custom"; dataUrl: string };
+
+type PortraitTab = "library" | "upload";
+
+type LibraryPortrait = {
+  id: "mage" | "fighter";
+  src: StaticImageData;
+  alt: string;
+  species: string;
+};
+
+const LIBRARY_PORTRAITS: LibraryPortrait[] = [
+  {
+    id: "mage",
+    src: portraitMage,
+    alt: "Arcane portrait",
+    species: "humanoid",
+  },
+  {
+    id: "fighter",
+    src: portraitFighter,
+    alt: "Martial portrait",
+    species: "humanoid",
+  },
+];
+
+const SPECIES_FILTER_OPTIONS: { value: string; en: string; vi: string }[] = [
+  { value: "all", en: "All species", vi: "Tất cả loài" },
+  { value: "humanoid", en: "Humanoid", vi: "Người hình" },
+  { value: "reptilian", en: "Reptilian", vi: "Bò sát" },
+];
+
+/** Gold rule + center diamond — modal header. */
+function GoldOrnamentModal({ className }: { className?: string }) {
+  return (
+    <div
+      className={`flex items-center justify-center gap-3 ${className ?? ""}`}
+      aria-hidden
+    >
+      <span
+        className="h-px flex-1 max-w-[100px] bg-gradient-to-r from-transparent to-[color:var(--gold)] opacity-90"
+        style={{ ["--gold" as string]: GOLD }}
+      />
+      <span
+        className="size-2 rotate-45 border border-[color:var(--gold)] bg-[#121212]"
+        style={{ ["--gold" as string]: GOLD }}
+      />
+      <span
+        className="h-px flex-1 max-w-[100px] bg-gradient-to-l from-transparent to-[color:var(--gold)] opacity-90"
+        style={{ ["--gold" as string]: GOLD }}
+      />
+    </div>
+  );
+}
+
+function PortraitPickerModal({
+  open,
+  initialChoice,
+  onClose,
+  onSave,
+}: {
+  open: boolean;
+  initialChoice: PortraitChoice | null;
+  onClose: () => void;
+  onSave: (choice: PortraitChoice) => void;
+}) {
+  const titleId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tab, setTab] = useState<PortraitTab>("library");
+  const [speciesFilter, setSpeciesFilter] = useState("all");
+  const [pending, setPending] = useState<PortraitChoice | null>(initialChoice);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const filteredLibrary = LIBRARY_PORTRAITS.filter(
+    (p) => speciesFilter === "all" || p.species === speciesFilter,
+  );
+
+  const handleFile = (fileList: FileList | null) => {
+    const file = fileList?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please choose an image file. · Chọn tệp ảnh.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError("Max 2 MB. · Tối đa 2 MB.");
+      return;
+    }
+    setUploadError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      if (typeof dataUrl === "string") {
+        setPending({ kind: "custom", dataUrl });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  if (!open) return null;
+
+  const canSave = pending !== null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="presentation"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/75 backdrop-blur-[2px]"
+        aria-label="Close dialog"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative z-10 flex max-h-[min(90vh,720px)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-zinc-700/80 bg-[#121212] shadow-2xl ring-1 ring-black/60"
+      >
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 px-5 pb-3 pt-4 sm:px-6">
+          <div className="min-w-0 flex-1 text-center sm:px-4">
+            <h2
+              id={titleId}
+              className="text-balance [font-family:var(--font-cinzel),serif] text-lg font-bold leading-snug text-white sm:text-xl"
+            >
+              Choose Portrait{" "}
+              <span className="text-zinc-200">Chọn Chân dung</span>
+            </h2>
+            <GoldOrnamentModal className="mt-2" />
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded p-1.5 text-zinc-400 transition hover:bg-zinc-800 hover:text-white"
+            aria-label="Close"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex shrink-0 border-b border-zinc-800 px-5 sm:px-6">
+          <button
+            type="button"
+            onClick={() => setTab("library")}
+            className={`relative px-1 py-3 text-[10px] font-semibold uppercase tracking-wide transition sm:text-[11px] ${
+              tab === "library"
+                ? "text-white after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white"
+                : "text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            Portrait library · Thư viện chân dung
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("upload")}
+            className={`relative ml-6 px-1 py-3 text-[10px] font-semibold uppercase tracking-wide transition sm:ml-8 sm:text-[11px] ${
+              tab === "upload"
+                ? "text-white after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-white"
+                : "text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            Custom upload · Tải lên tùy chỉnh
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+          {tab === "library" ? (
+            <>
+              <label className="mb-4 block max-w-xs">
+                <span className="mb-1.5 block text-[11px] text-zinc-400">
+                  Filter by species · Lọc theo loài
+                </span>
+                <span className="sr-only">Filter by species</span>
+                <select
+                  value={speciesFilter}
+                  onChange={(e) => setSpeciesFilter(e.target.value)}
+                  className="w-full appearance-none rounded-md border border-zinc-600 bg-zinc-900/90 bg-[length:12px] bg-[right_12px_center] bg-no-repeat py-2.5 pl-3 pr-10 text-xs text-zinc-100 focus:border-[color:var(--gold)] focus:outline-none focus:ring-1 focus:ring-[color:var(--gold)]"
+                  style={{
+                    ["--gold" as string]: GOLD,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1aa' d='M3 4.5L6 8l3-3.5'/%3E%3C/svg%3E")`,
+                  }}
+                >
+                  {SPECIES_FILTER_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.en} / {o.vi}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <section className="space-y-6">
+                <div>
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-200 sm:text-xs">
+                    Starter portraits · Chân dung khởi đầu
+                  </h3>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {filteredLibrary.map((p) => {
+                      const selected =
+                        pending?.kind === "preset" && pending.id === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() =>
+                            setPending({ kind: "preset", id: p.id })
+                          }
+                          className={`aspect-square overflow-hidden rounded-md border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] ${
+                            selected
+                              ? "border-[color:var(--gold)] ring-1 ring-[color:var(--gold)]/40"
+                              : "border-zinc-700 hover:border-zinc-500"
+                          }`}
+                          style={{ ["--gold" as string]: GOLD }}
+                        >
+                          <Image
+                            src={p.src}
+                            alt={p.alt}
+                            width={160}
+                            height={160}
+                            className="size-full object-cover"
+                          />
+                        </button>
+                      );
+                    })}
+                    {filteredLibrary.length === 0 && (
+                      <p className="col-span-full text-sm text-zinc-500">
+                        No portraits for this filter. · Không có chân dung cho
+                        bộ lọc này.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400 sm:text-xs">
+                    More coming soon · Sắp có thêm
+                  </h3>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="flex aspect-square items-center justify-center rounded-md border border-dashed border-zinc-800 bg-zinc-900/40 text-[10px] text-zinc-600"
+                      >
+                        —
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-zinc-400">
+                Upload a square image for best results. · Tải ảnh vuông để hiển
+                thị đẹp nhất.
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(e) => handleFile(e.target.files)}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-md border border-zinc-600 bg-zinc-900 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-zinc-200 transition hover:border-[color:var(--gold)] hover:text-white"
+                style={{ ["--gold" as string]: GOLD }}
+              >
+                Choose file · Chọn tệp
+              </button>
+              {uploadError && (
+                <p className="text-sm text-amber-600/90">{uploadError}</p>
+              )}
+              {pending?.kind === "custom" && (
+                <div className="mt-2 max-w-xs overflow-hidden rounded-md border border-zinc-700">
+                  <Image
+                    src={pending.dataUrl}
+                    alt="Upload preview"
+                    width={320}
+                    height={320}
+                    unoptimized
+                    className="aspect-square w-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex shrink-0 justify-end gap-3 border-t border-zinc-800 px-5 py-4 sm:px-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded border-2 border-[color:var(--gold)] bg-transparent px-5 py-2 text-[11px] font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-900"
+            style={{ ["--gold" as string]: GOLD }}
+          >
+            Cancel · Hủy bỏ
+          </button>
+          <button
+            type="button"
+            disabled={!canSave}
+            onClick={() => {
+              if (pending) onSave(pending);
+            }}
+            className="rounded px-5 py-2 text-[11px] font-semibold uppercase tracking-wide text-white transition enabled:bg-zinc-600 enabled:hover:bg-zinc-500 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
+          >
+            Save · Lưu
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /** Tên mẫu để gợi ý nhanh — shuffle bằng nút xúc xắc */
 const NAME_POOL = [
@@ -189,83 +524,9 @@ export function CreateCharacter() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [suggestions, setSuggestions] = useState(() => NAME_POOL.slice(0, 4));
-  const [account, setAccount] = useState<SessionAccount | null>(() =>
-    readSessionAccount(),
-  );
-  const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  /** Create new build and navigate to character builder */
-  const handleCreateBuild = useCallback(async () => {
-    if (!account?.id) {
-      setError("You must be logged in to create a build.");
-      return;
-    }
-
-    setIsCreating(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/builds", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: account.id,
-          name: name || "Unnamed Character",
-          description: "",
-          isPublic: false,
-          classRef: null, // Will be set in wizard step 1
-          raceRef: null, // Will be set in wizard step 2
-          backgroundRef: null, // Will be set in wizard step 3
-          stats: {
-            strength: 10,
-            dexterity: 10,
-            constitution: 10,
-            intelligence: 10,
-            wisdom: 10,
-            charisma: 10,
-          },
-          equipment: {},
-          spells: [],
-          feats: [],
-          tags: [],
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create build");
-      }
-
-      const data = await response.json();
-      const shareId = data.data.shareId;
-
-      // Navigate to character builder
-      router.push(`/build/${shareId}`);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to create character",
-      );
-      setIsCreating(false);
-    }
-  }, [account, name, router]);
-
-  /** Listen for storage changes (cross-tab sync) */
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === ACCOUNT_STORAGE_KEY || e.key === null) {
-        setAccount(readSessionAccount());
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  /** Xóa cookie session — header chuyển sang link Đăng nhập / Đăng ký */
-  const logout = useCallback(() => {
-    clearSessionAccount();
-    setAccount(null);
-  }, []);
+  const [portraitOpen, setPortraitOpen] = useState(false);
+  const [portraitModalEpoch, setPortraitModalEpoch] = useState(0);
+  const [portrait, setPortrait] = useState<PortraitChoice | null>(null);
 
   /** Xáo trộn NAME_POOL, lấy 4 tên hiển thị lại */
   const shuffleNames = useCallback(() => {
@@ -295,52 +556,7 @@ export function CreateCharacter() {
         aria-hidden
       />
 
-      {/* Tiêu đề giả + vùng phải: đã login thì chào + Đăng xuất; chưa thì link */}
-      <header className="border-b border-zinc-800/80 bg-black/50 px-4 py-3 backdrop-blur-md sm:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          {/* Giữ layout cân: cột trống bên trái */}
-          <span className="w-24 shrink-0 sm:w-32" aria-hidden />
-          <div className="[font-family:var(--font-cinzel),serif] text-center text-sm font-semibold tracking-[0.35em] text-white sm:text-base">
-            D&amp;D BEYOND
-          </div>
-          <div className="flex max-w-[min(100%,280px)] shrink-0 flex-col items-end gap-2 text-right sm:max-w-none">
-            {account ? (
-              <>
-                <p className="text-[11px] leading-snug text-zinc-400 sm:text-xs">
-                  Hi, {account.displayName}{" "}
-                  <span className="text-zinc-500">·</span> Xin chào,{" "}
-                  {account.displayName}
-                </p>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="text-[10px] font-medium uppercase tracking-wide text-amber-600/90 underline-offset-2 hover:text-amber-400 hover:underline"
-                >
-                  Đăng xuất
-                </button>
-              </>
-            ) : (
-              <nav
-                className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3"
-                aria-label="Tài khoản"
-              >
-                <Link
-                  href="/register"
-                  className="rounded border border-amber-600/50 bg-amber-950/40 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-amber-100 transition hover:border-amber-400 hover:bg-amber-900/50"
-                >
-                  Tạo tài khoản
-                </Link>
-                <Link
-                  href="/login"
-                  className="text-[11px] font-semibold text-zinc-300 underline-offset-2 hover:text-white hover:underline"
-                >
-                  Đăng nhập
-                </Link>
-              </nav>
-            )}
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
         {/* lg: 2 cột — trái nội dung + thẻ; phải sidebar tạo nhân vật */}
@@ -404,19 +620,12 @@ export function CreateCharacter() {
           {/* Cột phải: CTA + khung portrait + input tên + chip gợi ý */}
           <aside className="relative mx-auto w-full max-w-[380px] lg:mx-0 lg:max-w-none">
             {" "}
-            <div className="mb-3 flex flex-col items-center gap-2">
-              {error && (
-                <p className="rounded bg-red-900/50 px-3 py-2 text-xs text-red-100">
-                  {error}
-                </p>
-              )}
+            <div className="mb-3 flex justify-center">
               <button
                 type="button"
-                onClick={handleCreateBuild}
-                disabled={isCreating || !account}
-                className="rounded-lg bg-gradient-to-b from-amber-700/90 to-amber-950 px-8 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-amber-50 shadow-lg ring-1 ring-amber-500/40 transition hover:from-amber-600 hover:to-amber-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-lg bg-gradient-to-b from-amber-700/90 to-amber-950 px-8 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-amber-50 shadow-lg ring-1 ring-amber-500/40 transition hover:from-amber-600 hover:to-amber-900"
               >
-                {isCreating ? "Creating..." : "Create character · Tạo nhân vật"}
+                Create character · Tạo nhân vật
               </button>
             </div>
             <div className="relative mx-auto flex w-full max-w-[320px] flex-col items-center">
@@ -424,9 +633,39 @@ export function CreateCharacter() {
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-[50%] border-2 border-amber-600/70 bg-gradient-to-b from-zinc-800/90 via-zinc-950 to-black px-6 pb-8 pt-14 shadow-[0_0_40px_rgba(0,0,0,0.6)]">
                 {" "}
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-amber-900/15 to-transparent" />
-                <CharacterSilhouette className="mx-auto h-52 w-32 text-zinc-700 sm:h-60 sm:w-36" />
+                <div className="relative mx-auto flex h-52 w-32 shrink-0 items-center justify-center sm:h-60 sm:w-36">
+                  {portrait ? (
+                    portrait.kind === "custom" ? (
+                      <Image
+                        src={portrait.dataUrl}
+                        alt="Character Custom"
+                        width={200}
+                        height={280}
+                        unoptimized
+                        className="max-h-full w-auto object-contain object-bottom"
+                      />
+                    ) : (
+                      <Image
+                        src={
+                          portrait.id === "mage" ? idleGifMage : idleGifFighter
+                        }
+                        alt="Character"
+                        width={240}
+                        height={320}
+                        unoptimized
+                        className="max-h-full w-auto scale-[1.4] origin-bottom object-contain object-bottom [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_100%)]"
+                      />
+                    )
+                  ) : (
+                    <CharacterSilhouette className="h-full w-full max-h-[220px] text-zinc-700" />
+                  )}
+                </div>
                 <button
                   type="button"
+                  onClick={() => {
+                    setPortraitModalEpoch((n) => n + 1);
+                    setPortraitOpen(true);
+                  }}
                   className="relative z-10 mt-4 flex w-full items-center justify-center gap-2 rounded border border-amber-700/50 bg-zinc-900/80 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-amber-100/90 transition hover:border-amber-500 hover:bg-zinc-800"
                 >
                   <ImageIcon className="size-4 shrink-0" />
@@ -514,6 +753,17 @@ export function CreateCharacter() {
           </button>
         ))}
       </nav>
+
+      <PortraitPickerModal
+        key={portraitModalEpoch}
+        open={portraitOpen}
+        initialChoice={portrait}
+        onClose={() => setPortraitOpen(false)}
+        onSave={(choice) => {
+          setPortrait(choice);
+          setPortraitOpen(false);
+        }}
+      />
     </div>
   );
 }
