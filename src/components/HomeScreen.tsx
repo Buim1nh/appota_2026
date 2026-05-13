@@ -198,7 +198,27 @@ const CLASSES: ClassDef[] = [
   },
 ];
 
+import {
+  ACCOUNT_STORAGE_KEY,
+  readSessionAccount,
+  type SessionAccount,
+} from "@/lib/session-account";
+
 export function CharacterLanding() {
+  const [account, setAccount] = useState<SessionAccount | null>(null);
+
+  /** Đọc session khi mount; lắng nghe storage — tab khác đăng nhập/xuất thì UI cập nhật */
+  useEffect(() => {
+    queueMicrotask(() => setAccount(readSessionAccount()));
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === ACCOUNT_STORAGE_KEY || e.key === null) {
+        setAccount(readSessionAccount());
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
 
   return (
     <div className="relative min-h-svh overflow-x-hidden bg-[#06080c] text-zinc-100">
