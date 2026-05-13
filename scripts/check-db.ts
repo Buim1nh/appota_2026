@@ -51,7 +51,7 @@ async function check() {
     if (b.subclassId && !ruleIds.has(b.subclassId?.toString())) { console.error(`❌ Build "${b.name}": subclassId not found`); errors++; }
     if (b.backgroundRef && !ruleIds.has(b.backgroundRef?.toString())) { console.error(`❌ Build "${b.name}": backgroundRef not found`); errors++; }
     for (const [slot, id] of Object.entries(b.equipment || {})) {
-      if (id && !itemIds.has((id as any).toString())) { console.error(`❌ Build "${b.name}": equipment.${slot} item not found`); errors++; }
+      if (id && !itemIds.has(String(id))) { console.error(`❌ Build "${b.name}": equipment.${slot} item not found`); errors++; }
     }
     for (const sid of (b.spells || [])) {
       if (!spellIds.has(sid.toString())) { console.error(`❌ Build "${b.name}": spell ref not found`); errors++; }
