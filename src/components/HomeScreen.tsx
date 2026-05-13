@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import characterIllustration from "../../public/asset/character.webp";
 import homeHeroBg from "../../public/asset/backgound home3.webp";
 import homeBackdrop from "../../public/asset/backgound home2.jpg";
-import classesSectionBg from "../../public/asset/backgound home1.webp";
+import classesSectionBg from "../../public/asset/backgound home1.jpg";
 import { Header } from "./Header";
 
 const GOLD = "#C89B3C";
@@ -258,7 +258,27 @@ const CLASSES: ClassDef[] = [
   },
 ];
 
+import {
+  ACCOUNT_STORAGE_KEY,
+  readSessionAccount,
+  type SessionAccount,
+} from "@/lib/session-account";
+
 export function CharacterLanding() {
+  const [account, setAccount] = useState<SessionAccount | null>(null);
+
+  /** Đọc session khi mount; lắng nghe storage — tab khác đăng nhập/xuất thì UI cập nhật */
+  useEffect(() => {
+    queueMicrotask(() => setAccount(readSessionAccount()));
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === ACCOUNT_STORAGE_KEY || e.key === null) {
+        setAccount(readSessionAccount());
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   return (
     <div className="relative min-h-svh overflow-x-hidden bg-[#06080c] text-zinc-100">
       {/* Full-viewport art (dragon / mountains) + scrims for legible copy */}
@@ -269,7 +289,13 @@ export function CharacterLanding() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-cover object-center blur-[1px] opacity-50"
+          style={{
+            maskImage:
+              "radial-gradient(circle at center, black 40%, transparent 90%)",
+            WebkitMaskImage:
+              "radial-gradient(circle at center, black 40%, transparent 90%)",
+          }}
         />
       </div>
       <div
@@ -285,7 +311,7 @@ export function CharacterLanding() {
 
       <main>
         {/* Hero — giống tham chiếu D&D Beyond: chữ nền lớn, không thẻ kính đặc */}
-        <section className="relative isolate flex min-h-[min(96svh,64rem)] flex-col justify-center overflow-hidden border-b border-zinc-800/60 px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <section className="relative isolate flex min-h-[min(96svh,64rem)] flex-col justify-center overflow-hidden px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
             <Image
               src={homeHeroBg}
@@ -294,6 +320,12 @@ export function CharacterLanding() {
               sizes="100vw"
               priority
               className="object-cover object-[center_28%] sm:object-[center_22%] [transform:scale(1.05)]"
+              style={{
+                maskImage:
+                  "linear-gradient(to bottom, black 30%, transparent 98%)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, black 30%, transparent 98%)",
+              }}
             />
           </div>
           <div
@@ -315,8 +347,11 @@ export function CharacterLanding() {
                 Trình tạo nhân vật D&amp;D chính thức
               </p>
 
-              <h1 className="mx-auto mt-4 max-w-[min(96vw,44rem)] text-pretty text-center [font-family:var(--font-cinzel),serif] text-[clamp(1.6rem,4.5vw+0.35rem,3.2rem)] font-bold leading-[1.14] tracking-[0.015em] text-white sm:mt-5 sm:leading-[1.1] [text-shadow:0_2px_20px_rgba(0,0,0,0.88)]">
-                Tạo nhân vật nhanh chóng, chơi mọi nơi, bắt đầu miễn phí.
+              <h1
+                className="mx-auto mt-4 max-w-[min(96vw,44rem)] text-pretty text-center font-serif text-[clamp(1.6rem,4.5vw+0.35rem,3.2rem)] font-bold leading-[1.14] tracking-[0.015em] text-white sm:mt-5 sm:leading-[1.1] [text-shadow:0_2px_20px_rgba(0,0,0,0.88)]"
+                style={{ fontFamily: "var(--font-charm), cursive" }}
+              >
+                Tạo nhân vật nhanh chóng, chơi mọi nơi
               </h1>
 
               <p className="mx-auto mt-5 max-w-2xl text-pretty text-sm font-normal leading-relaxed text-zinc-100/95 sm:mt-6 sm:text-[15px] sm:leading-relaxed [text-shadow:0_1px_12px_rgba(0,0,0,0.9)]">
@@ -351,7 +386,7 @@ export function CharacterLanding() {
         {/* 12 classes — full-bleed section bg (swap `classesSectionBg` source above) */}
         <section
           id="classes"
-          className="relative isolate overflow-hidden border-b border-zinc-800/60 px-4 py-14 sm:px-6 lg:px-8"
+          className="relative isolate overflow-hidden px-4 py-14 sm:px-6 lg:px-8"
         >
           <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
             <Image
@@ -359,7 +394,13 @@ export function CharacterLanding() {
               alt=""
               fill
               sizes="100vw"
-              className="object-cover object-[center_40%]"
+              className="object-cover object-[center_40%] opacity-90"
+              style={{
+                maskImage:
+                  "radial-gradient(ellipse at center, black 25%, transparent 95%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse at center, black 25%, transparent 95%)",
+              }}
             />
           </div>
           <div
@@ -388,7 +429,10 @@ export function CharacterLanding() {
                       </div>
                     </div>
                     <div className="mt-auto pt-4">
-                      <h3 className="[font-family:var(--font-cinzel),serif] text-lg font-semibold tracking-wide text-[#fefefe] [text-shadow:0_2px_10px_rgba(0,0,0,0.9)]">
+                      <h3
+                        className="font-serif text-lg font-semibold tracking-wide text-[#fefefe] [text-shadow:0_2px_10px_rgba(0,0,0,0.9)]"
+                        style={{ fontFamily: "var(--font-charm), cursive" }}
+                      >
                         {c.name}
                       </h3>
                     </div>
@@ -416,7 +460,10 @@ export function CharacterLanding() {
           />
           <div className="relative z-10 mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl rounded-2xl border border-white/15 bg-black/55 px-5 py-8 text-center shadow-xl backdrop-blur-md sm:px-8">
-              <h2 className="text-balance [font-family:var(--font-cinzel),serif] text-2xl font-semibold text-[#fefefe] [text-shadow:0_2px_16px_rgba(0,0,0,0.92)] sm:text-3xl">
+              <h2
+                className="text-balance font-serif text-2xl font-semibold text-[#fefefe] [text-shadow:0_2px_16px_rgba(0,0,0,0.92)] sm:text-3xl"
+                style={{ fontFamily: "var(--font-charm), cursive" }}
+              >
                 Lấy nhân vật của bạn bất cứ nơi nào bạn phiêu lưu
               </h2>
               <p className="mx-auto mt-5 max-w-2xl text-pretty text-sm font-medium leading-relaxed text-zinc-50 sm:text-base [text-shadow:0_1px_12px_rgba(0,0,0,0.92)]">
@@ -429,7 +476,10 @@ export function CharacterLanding() {
 
             <div className="mx-auto mt-10 max-w-5xl rounded-2xl border border-[#C89B3C]/40 bg-zinc-950/55 p-6 backdrop-blur-sm sm:p-8 lg:grid lg:grid-cols-[1fr_1.1fr] lg:gap-10 lg:p-10">
               <div className="space-y-5">
-                <h3 className="text-balance [font-family:var(--font-cinzel),serif] text-lg font-semibold text-[#fafafa] sm:text-xl">
+                <h3
+                  className="text-balance font-serif text-lg font-semibold text-[#fafafa] sm:text-xl"
+                  style={{ fontFamily: "var(--font-charm), cursive" }}
+                >
                   Hãy để trang tính của bạn xử lý các chi tiết
                 </h3>
                 <ul className="space-y-4 text-sm font-medium text-zinc-50">
@@ -464,37 +514,6 @@ export function CharacterLanding() {
           </div>
         </section>
       </main>
-
-      <nav
-        className="fixed right-2 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-1 rounded-full border border-zinc-800/80 bg-black/70 p-1.5 shadow-xl backdrop-blur-md md:flex"
-        aria-label="Công cụ nhanh"
-      >
-        {[
-          {
-            label: "Trợ giúp",
-            d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z",
-          },
-          {
-            label: "Sách",
-            d: "M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12V2zm-7 2v5l2.5-1.5L18 9V4h-7z",
-          },
-          {
-            label: "Xúc xắc",
-            d: "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 3v2h2V6H8zm5 0v2h2V6h-2zm5 0v2h2V6h-2zM8 11v2h2v-2H8zm5 0v2h2v-2h-2zm5 0v2h2v-2h-2zM8 16v2h2v-2H8zm5 0v2h2v-2h-2zm5 0v2h2v-2h-2z",
-          },
-        ].map((item) => (
-          <button
-            key={item.label}
-            type="button"
-            className="flex size-10 items-center justify-center rounded-full text-zinc-200 transition hover:bg-zinc-800 hover:text-[#f0d090]"
-            aria-label={item.label}
-          >
-            <svg viewBox="0 0 24 24" className="size-5" fill="currentColor">
-              <path d={item.d} />
-            </svg>
-          </button>
-        ))}
-      </nav>
     </div>
   );
 }
