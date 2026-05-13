@@ -1,26 +1,296 @@
 @import "tailwindcss";
 
+/* ---------- Dark-Fantasy RPG Palette & Textures ---------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-deep: #0b0b0d; /* deep dungeon base */
+  --stone-1: #0f1416;
+  --parchment: #efe2c9; /* warm parchment */
+  --ink: #23170f; /* deep ink for text on parchment */
+  --muted: #9b8f85;
+  --gold: #b68b2a;
+  --iron: #4b5563;
+  --ember: #ffb86b;
+  --violet: #a76bff;
+  --emerald: #4ef2b0;
+  --glass: rgba(255, 255, 255, 0.04);
+  --border-color: rgba(255, 255, 255, 0.06);
+  --border: var(--border-color);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg-deep: #f4efe6;
+    --parchment: #fffdf6;
+    --ink: #1b1b1b;
   }
 }
 
+/* ---------- Background texture helpers (SVG data URIs) ---------- */
+/* subtle stone slab */
+.bg-stone {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'%3E%3Crect width='100%25' height='100%25' fill='%230b0b0d'/%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/feTurbulence%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='0.06' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: cover;
+}
+
+/* shadowed dungeon bricks - repeat */
+.bg-brick {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230b0b0d'/%3E%3Cg fill='%23131313' opacity='0.06'%3E%3Crect x='0' y='0' width='32' height='16'/%3E%3Crect x='32' y='16' width='32' height='16'/%3E%3Crect x='0' y='32' width='32' height='16'/%3E%3Crect x='32' y='48' width='32' height='16'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* worn parchment texture */
+.bg-parchment {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.02)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Crect width='100%25' height='100%25' fill='%23efe2c9'/%3E%3Cfilter id='grain'%3E%3CfeTurbulence baseFrequency='0.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='0.06' filter='url(%23grain)'/%3E%3C/svg%3E");
+  background-size: cover;
+}
+
+/* ---------- Ornate pixel border using inline SVG for border-image ---------- */
+.ornate-border {
+  border: 12px solid transparent;
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23b68b2a'/%3E%3Cstop offset='1' stop-color='%23f7e7b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='0' y='0' width='60' height='60' fill='none' stroke='url(%23g)' stroke-width='6'/%3E%3C/svg%3E");
+  border-image-slice: 30 fill;
+  border-image-width: 12px;
+  border-image-repeat: stretch;
+  position: relative;
+}
+
+.ornate-inner {
+  background: var(--parchment);
+  padding: 1rem;
+}
+
+/* For dark framed cards */
+.ornate-dark {
+  border: 12px solid transparent;
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect x='0' y='0' width='60' height='60' fill='none' stroke='%234b5563' stroke-width='6'/%3E%3C/svg%3E");
+  border-image-slice: 30 fill;
+  border-image-width: 12px;
+  border-image-repeat: stretch;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.6));
+  color: #fff;
+}
+
+/* ---------- Button styles: chunky 3D pixel buttons ---------- */
+.btn-ornate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
+  text-transform: none;
+  border-radius: 6px;
+  user-select: none;
+  position: relative;
+  transform: translateZ(0);
+}
+
+.btn-ornate::before {
+  /* pixel frame */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 6px solid transparent;
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect x='0' y='0' width='40' height='40' fill='none' stroke='%234b5563' stroke-width='4'/%3E%3C/svg%3E");
+  border-image-slice: 20 fill;
+  border-image-width: 6px;
+  pointer-events: none;
+}
+
+.btn-ornate:active {
+  transform: translateY(2px) scale(0.995);
+  box-shadow: none;
+}
+.btn-ornate:focus {
+  outline: 2px dashed var(--ember);
+  outline-offset: 4px;
+}
+
+.btn-primary-ornate {
+  background: linear-gradient(180deg, #3b2b1f, #241709);
+  color: var(--parchment);
+  box-shadow:
+    0 6px 0 0 #0b0b0d,
+    0 12px 24px rgba(0, 0, 0, 0.6);
+}
+
+.btn-primary-ornate:hover {
+  box-shadow:
+    0 8px 0 0 #0b0b0d,
+    0 18px 36px rgba(0, 0, 0, 0.65);
+}
+.btn-primary-ornate::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 8px;
+  filter: blur(6px);
+  opacity: 0.6;
+  background: linear-gradient(
+    90deg,
+    rgba(167, 107, 255, 0.08),
+    rgba(78, 242, 176, 0.06)
+  );
+  pointer-events: none;
+}
+
+.btn-ghost-ornate {
+  background: transparent;
+  color: var(--parchment);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ---------- Card / dossier ---------- */
+.dossier {
+  display: block;
+  width: 100%;
+}
+
+.dossier .dossier-frame {
+  display: block;
+}
+
+.dossier .dossier-inner {
+  padding: 1rem;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(0, 0, 0, 0.02)
+  );
+  background-size: cover;
+}
+
+.dossier-title {
+  font-family: var(--font-press);
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.dossier-subtle {
+  color: var(--muted);
+}
+
+.badge-ornate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ink);
+  border: 2px solid rgba(0, 0, 0, 0.06);
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+/* Layout helpers */
+.hero-epic {
+  position: relative;
+  padding: 6rem 0;
+  overflow: hidden;
+}
+
+.hero-epic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(
+      ellipse at 20% 10%,
+      rgba(167, 107, 255, 0.06),
+      transparent 10%
+    ),
+    radial-gradient(
+      ellipse at 80% 80%,
+      rgba(78, 242, 176, 0.04),
+      transparent 8%
+    ),
+    url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600"%3E%3Crect width="100%25" height="100%25" fill="%230b0b0d"/%3E%3C/filter%3E%3C/svg%3E');
+  background-size: cover;
+  mix-blend-mode: multiply;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+/* Root defaults */
+html,
+body,
+#__next {
+  height: 100%;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-deep);
+  color: var(--parchment);
+  font-family:
+    var(--font-inter),
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* emphasis for readable text on parchment */
+.text-ink {
+  color: var(--ink);
+}
+.text-bright {
+  color: #fff;
+}
+
+.font-press {
+  font-family: var(--font-press);
+}
+
+.rpg-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.05)),
+    rgba(11, 11, 13, 0.72);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 0 0 1px rgba(182, 139, 42, 0.12),
+    0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.rpg-control {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.08)),
+    rgba(15, 20, 22, 0.95);
+  color: var(--parchment);
+  border: 1px solid rgba(182, 139, 42, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.24);
+}
+
+.rpg-control:focus {
+  outline: 2px solid rgba(255, 184, 107, 0.85);
+  outline-offset: 3px;
+}
+
+.rpg-control option {
+  background-color: #1a1a1a !important; /* Màu nền tối cho list option */
+  color: #f3e5c7 !important; /* Màu chữ sáng */
+}
+
+.rpg-control:not(:focus) {
+  border-color: rgba(182, 139, 42, 0.4);
+}
+.rpg-surface {
+  background:
+    radial-gradient(circle at top, rgba(182, 139, 42, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.04));
+}
+
+/* Accessibility focus */
+:focus {
+  outline: 2px dashed var(--ember);
+  outline-offset: 4px;
 }
