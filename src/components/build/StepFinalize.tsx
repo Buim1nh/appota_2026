@@ -2,9 +2,21 @@
 
 import { useBuildDraftStore } from "@/store/build-draft-store";
 import { calculateDerivedStats } from "@/utils/statCalculations";
-import { useRef, useState } from "react";
+import { useState, useEffect } from "react";
+import type React from "react";
+
+type PDFDownloadLinkComponent = React.ComponentType<{
+  document: React.ReactElement;
+  fileName?: string;
+  children?: (props: {
+    loading: boolean;
+    blob?: Blob | null;
+    url?: string | null;
+  }) => React.ReactNode;
+}>;
 import Button from "../Button";
 import StepReview from "./StepReview";
+import CharacterPDFDocument from "./CharacterPDFDocument";
 
 export default function StepFinalize() {
   const draft = useBuildDraftStore((state) => state.draft);
@@ -18,7 +30,23 @@ export default function StepFinalize() {
   const [success, setSuccess] = useState(false);
   const [savedBuildId, setSavedBuildId] = useState<string | null>(null);
 
-  const reviewRef = useRef<HTMLDivElement>(null);
+  const [PDFDownloadLinkComp, setPDFDownloadLinkComp] =
+    useState<PDFDownloadLinkComponent | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    import("@react-pdf/renderer")
+      .then((mod) => {
+        if (mounted)
+          setPDFDownloadLinkComp(
+            mod.PDFDownloadLink as PDFDownloadLinkComponent,
+          );
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Validate that the build has required fields
   const canSave =
@@ -105,24 +133,8 @@ export default function StepFinalize() {
     }
   };
 
-  const handleExportPDF = async () => {
-    if (!reviewRef.current) return;
-    const html2pdf = (await import("html2pdf.js")).default;
-
-    const opt = {
-      margin: 10,
-      filename: `${buildName || "character"}-dossier.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      },
-      jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
-    } as const;
-
-    // Thực hiện chụp trực tiếp từ ref đã được đẩy ra ngoài màn hình
-    html2pdf().set(opt).from(reviewRef.current).save();
+  const handleExportPDF = () => {
+    // Deprecated: use PDFDownloadLink button rendered below.
   };
   if (success && savedBuildId) {
     return (
@@ -221,17 +233,7 @@ export default function StepFinalize() {
           )}
 
           {/* Preview */}
-          <div
-            ref={reviewRef}
-            style={{
-              position: "absolute",
-              left: "-9999px",
-              top: "0",
-              width: "800px", // Cố định chiều rộng để PDF không bị vỡ layout
-            }}
-          >
-            <StepReview />
-          </div>
+          {/* PDF generation uses @react-pdf/renderer; no off-screen DOM needed */}
 
           {/* Save Actions */}
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -243,14 +245,87 @@ export default function StepFinalize() {
             >
               {loading ? "Saving..." : "Save to Archive"}
             </Button>
-            <Button
-              variant="ghost"
-              className="px-6 py-3 flex-1"
-              onClick={handleExportPDF}
-              disabled={loading}
-            >
-              Export to PDF
-            </Button>
+            {PDFDownloadLinkComp ? (
+              <PDFDownloadLinkComp
+                document={
+                  <CharacterPDFDocument
+                    build={{
+                      _id: "draft",
+                      name: buildName || draft.name,
+                      level: draft.level,
+                      classRef: draft.classRule
+                        ? {
+                            _id: draft.classRule.id,
+                            name: draft.classRule.name,
+                            category: draft.classRule.category ?? "",
+                            modifiers: [],
+                          }
+                        : null,
+                      subclassId: draft.subclassRule
+                        ? {
+                            _id: draft.subclassRule.id,
+                            name: draft.subclassRule.name,
+                            category: draft.subclassRule.category ?? "",
+                            modifiers: [],
+                          }
+                        : null,
+                      raceRef: draft.raceRule
+                        ? {
+                            _id: draft.raceRule.id,
+                            name: draft.raceRule.name,
+                            category: draft.raceRule.category ?? "",
+                            modifiers: [],
+                          }
+                        : null,
+                      backgroundRef: draft.backgroundRule
+                        ? {
+                            _id: draft.backgroundRule.id,
+                            name: draft.backgroundRule.name,
+                            category: draft.backgroundRule.category ?? "",
+                            modifiers: [],
+                          }
+                        : null,
+                      baseStats: draft.stats,
+                      derivedStats: calculateDerivedStats(
+                        draft.stats,
+                        draft.level,
+                      ),
+                      equipment: draft.equipment,
+                      spells: [],
+                      feats: [],
+                      activeModifiers: [],
+                      shareId: "",
+                      isPublic: draft.isPublic,
+                      optimizationScore: 0,
+                      tags: draft.tags,
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString(),
+                    }}
+                    features={{
+                      classFeature: draft.classFeature,
+                      raceTrait: draft.raceTrait,
+                      backgroundFeature: draft.backgroundFeature,
+                      notes,
+                    }}
+                  />
+                }
+                fileName={`${buildName || "character"}-dossier.pdf`}
+              >
+                {({ loading }: { loading: boolean }) => (
+                  <Button variant="ghost" className="px-6 py-3 flex-1">
+                    {loading ? "Preparing..." : "Export to PDF"}
+                  </Button>
+                )}
+              </PDFDownloadLinkComp>
+            ) : (
+              <Button
+                variant="ghost"
+                className="px-6 py-3 flex-1"
+                disabled={loading}
+              >
+                Export to PDF
+              </Button>
+            )}
           </div>
         </div>
 
@@ -319,14 +394,6 @@ export default function StepFinalize() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Full Review Below */}
-      <div>
-        <h3 className="font-press mb-4 text-lg text-[#f0e6d2]">
-          Full Character Review
-        </h3>
-        <StepReview />
       </div>
     </div>
   );

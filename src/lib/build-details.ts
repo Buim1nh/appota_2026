@@ -55,7 +55,7 @@ const populatedBuildProjection = [
     path: "equipment.amulet",
     select: "name type rarity requiresAttunement description modifiers weaponProps source edition",
   },
-] as const;
+] 
 
 export const getBuildByIdentifier = cache(async (identifier: string) => {
   await connectMongoDB();

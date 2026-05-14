@@ -13,8 +13,8 @@ const steps: StepState[] = [
   { id: 2, label: "Race", detail: "Blood and heritage" },
   { id: 3, label: "Background", detail: "Past and oath" },
   { id: 4, label: "Stats", detail: "Shape your core" },
-  { id: 5, label: "Equipment", detail: "Arm the build" },
-  { id: 6, label: "Review", detail: "Seal the dossier" },
+  { id: 5, label: "Review", detail: "Review your build" },
+  { id: 6, label: "Save/Export", detail: "Seal the dossier" },
 ];
 
 export default function BuildProgressIndicator({

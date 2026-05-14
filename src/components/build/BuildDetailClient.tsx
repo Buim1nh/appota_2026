@@ -1,54 +1,44 @@
 "use client";
 
 import type { BuildDetailDto } from "@/types/build-detail";
-import { useRef } from "react";
+import { useState, useEffect } from "react";
+import type React from "react";
+
+type PDFDownloadLinkComponent = React.ComponentType<{
+  document: React.ReactElement;
+  fileName?: string;
+  children?: (props: {
+    loading: boolean;
+    blob?: Blob | null;
+    url?: string | null;
+  }) => React.ReactNode;
+}>;
 import Button from "../Button";
 import BuildDetailSheet from "./BuildDetailSheet";
+import CharacterPDFDocument from "./CharacterPDFDocument";
 
 export default function BuildDetailClient({
   build,
 }: {
   build: BuildDetailDto;
 }) {
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const exportRef = useRef<HTMLDivElement>(null);
+  const [PDFDownloadLinkComp, setPDFDownloadLinkComp] =
+    useState<PDFDownloadLinkComponent | null>(null);
 
-  const waitForLayout = async () => {
-    await Promise.all([
-      (document as Document & { fonts?: FontFaceSet }).fonts?.ready ??
-        Promise.resolve(),
-      new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
-      new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
-    ]);
-  };
-
-  const handleExportPDF = async () => {
-    const target = exportRef.current;
-    if (!target) return;
-
-    await waitForLayout();
-
-    const html2pdf = (await import("html2pdf.js")).default;
-
-    const opt = {
-      margin: 8,
-      filename: `${build.name || "character"}-dossier.pdf`,
-      pagebreak: { mode: ["css", "legacy"] },
-      image: { type: "jpeg", quality: 1 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: true,
-        backgroundColor: "#efe2c9",
-        scrollX: 0,
-        scrollY: 0,
-      },
-      jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
-    } as const;
-
-    await html2pdf().set(opt).from(target).save();
-  };
+  useEffect(() => {
+    let mounted = true;
+    import("@react-pdf/renderer")
+      .then((mod) => {
+        if (mounted)
+          setPDFDownloadLinkComp(
+            mod.PDFDownloadLink as PDFDownloadLinkComponent,
+          );
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -69,29 +59,28 @@ export default function BuildDetailClient({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Button
-              variant="ghost"
-              className="px-4 py-3"
-              onClick={handleExportPDF}
-            >
-              Export to PDF
-            </Button>
+            {PDFDownloadLinkComp ? (
+              <PDFDownloadLinkComp
+                document={<CharacterPDFDocument build={build} />}
+                fileName={`${build.name || "character"}-dossier.pdf`}
+              >
+                {({ loading }: { loading: boolean }) => (
+                  <Button variant="ghost" className="px-4 py-3">
+                    {loading ? "Preparing..." : "Export to PDF"}
+                  </Button>
+                )}
+              </PDFDownloadLinkComp>
+            ) : (
+              <Button variant="ghost" className="px-4 py-3">
+                Export to PDF
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      <div ref={sheetRef} className="space-y-6">
+      <div className="space-y-6">
         <BuildDetailSheet build={build} />
-      </div>
-
-      <div
-        ref={exportRef}
-        data-pdf-safe-export
-        aria-hidden="true"
-        className="pointer-events-none fixed top-0 overflow-hidden"
-        style={{ left: "-10000px", width: "900px" }}
-      >
-        <BuildDetailSheet build={build} pdfSafe />
       </div>
     </div>
   );

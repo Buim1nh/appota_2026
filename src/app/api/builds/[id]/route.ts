@@ -1,20 +1,3 @@
-import { NextResponse } from "next/server";
-import { getBuildByIdentifier } from "@/lib/build-details";
-
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
-
-export async function GET(_request: Request, { params }: RouteContext) {
-  const { id } = await params;
-  const build = await getBuildByIdentifier(id);
-
-  if (!build) {
-    return NextResponse.json({ error: "Build not found" }, { status: 404 });
-  }
-
-  return NextResponse.json({ data: build }, { status: 200 });
-}
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongoose";
 import { Build } from "@/models";
